@@ -49,6 +49,7 @@ void deleteArray(char **argsarray){
 
 
 void execFunction(char **argsarray, int redir, char *fileName){
+        int statusChild;
         pid_t pid = fork();
         int fileCreate;
         printf("%d", redir);
@@ -77,7 +78,6 @@ void execFunction(char **argsarray, int redir, char *fileName){
                 close(fileCreate);
                 exit(0);
         }else{  //parent
-                int statusChild;
                 wait(&statusChild);
                 printf("pid:%d status:%d\n", pid, WEXITSTATUS(statusChild));
         }
