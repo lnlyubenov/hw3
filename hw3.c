@@ -9,10 +9,21 @@
 
 static jmp_buf jumper;
 
-void sigint_handler(int signo) {
+void sigint_handler(int signal) {
         longjmp(jumper, 42);
 }
 
+void sigtstp_handler(int signal) {
+        longjmp(jumper, 30);
+}
+
+void siginChildKill(int signal){
+        kill(getpid(), SIGINT);
+}
+
+void sigtstpChildKill(int signal){
+        kill(getpid(), SIGTSTP);
+}
 
 
 char** initArray(){
@@ -43,6 +54,7 @@ void execFunction(char **argsarray, int redir, char *fileName){
         printf("%d", redir);
 
         if(pid == 0) { //if it is child
+
                 printf("%d", redir);
                 if (redir == 2) {
                         fileCreate = open(fileName, O_TRUNC | O_RDWR | O_CREAT, 0777);
@@ -50,8 +62,6 @@ void execFunction(char **argsarray, int redir, char *fileName){
                                 perror("Error, check STDOUT_file.");
                         }
                         dup2(fileCreate, STDOUT_FILENO);
-                        //close(fileCreate);
-                        //argsarray[STDOUT_FILENO] = NULL;
                 }
                 if (redir == 1) {
                         fileCreate = open(fileName, O_RDONLY);
@@ -60,8 +70,9 @@ void execFunction(char **argsarray, int redir, char *fileName){
                         }
                         dup2(fileCreate, STDIN_FILENO);
                         close(fileCreate);
-                        //argsarray[STDIN_FILENO] = NULL;
                 }
+                signal(SIGINT, siginChildKill);
+                signal(SIGTSTP, sigtstpChildKill);
                 execvp(argsarray[0], argsarray);
                 close(fileCreate);
                 exit(0);
@@ -79,7 +90,6 @@ int redirArray(char **argsarray, char *line, char *fileName){
 
         char *word = strtok(line, " ");
         while (word) {
-                // printf("word = %s\n", word);
                 if(strcmp(word, "<") == 0 || strcmp(word, ">") == 0) {
                         if(strcmp(word, "<") == 0) {
                                 isINorOut = 1;
@@ -107,7 +117,6 @@ int redirArray(char **argsarray, char *line, char *fileName){
                 }
                 else{
                         strcpy(argsarray[i], word);
-                        // printf("argsarray[%d] = %s\n", i, argsarray[i]);
                         i = i + 1;
                 }
                 word = strtok(NULL, " ");
@@ -122,41 +131,38 @@ int redirArray(char **argsarray, char *line, char *fileName){
 
 int main(int argc, char **argv){
 
-
         char line[500];
         char** argsarray;
         char fileName[100];
         int redir;
 
         signal(SIGINT, sigint_handler);
+        signal(SIGTSTP, sigtstp_handler);
 
         while(1) {
-                if (setjmp(jumper) == 42) {
+                switch (setjmp(jumper)) {
+                case 42:
                         printf("\ncaught sigint\n");
+                        break;
 
+                case 30:
+                        printf("\ncaught sigstp\n");
+                        break;
+
+                default:
+                        break;
                 }
+
                 printf("CS361 > ");
                 fgets(line, 500, stdin);
-
                 if(strncmp(line, "exit", (strlen(line)-1))==0) break;
-
                 if(line[strlen(line)-1] == '\n') {
                         line[strlen(line)-1] = '\0';
                 }
 
                 argsarray = initArray();
-
                 redir = redirArray(argsarray, line, fileName);
-                //printf("%s", argsarray[0]);
-
-
                 execFunction(argsarray, redir, fileName);
-
-
                 deleteArray(argsarray);
-                // if(execFunction(argsarray) == 0){
-                //   continue;
-                // }
-
         }
 }
