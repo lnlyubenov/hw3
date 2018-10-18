@@ -56,7 +56,6 @@ void execFunction(char **argsarray, int redir, char *fileName){
 
         if(pid == 0) { //if it is child
 
-                printf("%d", redir);
                 if (redir == 2) {
                         fileCreate = open(fileName, O_TRUNC | O_RDWR | O_CREAT, 0777);
                         if (fileCreate < 0) {
