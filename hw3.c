@@ -162,6 +162,7 @@ int main(int argc, char **argv){
 
                 argsarray = initArray();
                 redir = redirArray(argsarray, line, fileName);
+                fflush(stdout);
                 execFunction(argsarray, redir, fileName);
                 deleteArray(argsarray);
         }
