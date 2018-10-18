@@ -52,7 +52,6 @@ void execFunction(char **argsarray, int redir, char *fileName){
         int statusChild;
         pid_t pid = fork();
         int fileCreate;
-        printf("%d", redir);
 
         if(pid == 0) { //if it is child
 
